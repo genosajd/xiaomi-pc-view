@@ -57,7 +57,17 @@ func NewProducer(source string) *Producer {
 // the next consumer dials the new source: the consumer of a stopped player is removed
 // asynchronously and a new one could otherwise join the old connection (e.g. history
 // showed live video instead of the SD card recording).
-func (p *Producer) SetSource(s string) {
+func (p *Producer) SetSource(s string) { p.setSource(s, false) }
+
+// SetSourceInPlace changes the source of a running stream without dropping its consumers:
+// the new source is dialed while the old one still plays, the consumers' tracks are moved
+// onto it and only then the old connection is stopped (OBS on the on-air stream switches
+// camera without a drop). Only for sources that don't share a session with the old one:
+// the on-air stream re-streams the local RTSP of a camera. A Xiaomi camera takes one
+// session at a time, so its own stream (live <-> SD playback) uses SetSource.
+func (p *Producer) SetSourceInPlace(s string) { p.setSource(s, true) }
+
+func (p *Producer) setSource(s string, inPlace bool) {
 	if p.template != "" {
 		s = strings.Replace(p.template, SourceTemplate, s, 1)
 	}
@@ -67,7 +77,7 @@ func (p *Producer) SetSource(s string) {
 	if changed {
 		p.gen++
 	}
-	running := changed && p.state == stateStart && p.conn != nil
+	running := inPlace && changed && p.state == stateStart && p.conn != nil
 	var id int
 	if running {
 		p.workerID++ // (the old connection's worker then ends without reconnecting)

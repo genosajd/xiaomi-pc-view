@@ -2,6 +2,7 @@ package core
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/pion/rtp"
 )
@@ -30,6 +31,7 @@ type Node struct {
 	id     uint32
 	childs []*Node
 	parent *Node
+	rejoin atomic.Bool // the node was moved to another source: a Sender rebases its timeline
 
 	mu sync.Mutex
 }
@@ -84,5 +86,18 @@ func MoveNode(dst, src *Node) {
 
 	for _, child := range childs {
 		child.parent = dst
+		child.markRejoin()
+	}
+}
+
+// markRejoin: the packets of another source follow (MoveNode) - this node and everything
+// under it (filters, senders).
+func (n *Node) markRejoin() {
+	n.rejoin.Store(true)
+	n.mu.Lock()
+	childs := n.childs
+	n.mu.Unlock()
+	for _, child := range childs {
+		child.markRejoin()
 	}
 }

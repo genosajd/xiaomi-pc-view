@@ -196,13 +196,13 @@ func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 	})
 
 	handle("move", "POST", func(r *http.Request, name string) (any, error) {
-		manual(name)
 		ops := map[string]int{"left": motorLeft, "right": motorRight, "up": motorUp, "down": motorDown}
 		dir := r.URL.Query().Get("direction")
 		op, ok := ops[dir]
 		if !ok {
 			return nil, errors.New("direction must be left, right, up or down")
 		}
+		manual(name)
 		steps, _ := strconv.Atoi(r.URL.Query().Get("steps"))
 		steps = min(max(steps, 1), 100)
 		if err := ensureSession(name); err != nil {
@@ -220,11 +220,11 @@ func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 	})
 
 	handle("zoom", "POST", func(r *http.Request, name string) (any, error) {
-		manual(name)
 		z, err := strconv.ParseFloat(r.URL.Query().Get("value"), 64)
 		if err != nil || z < 1 || z > maxZoom {
 			return nil, fmt.Errorf("value must be 1.0-%.1f", maxZoom)
 		}
+		manual(name)
 		if err = ensureSession(name); err != nil {
 			return nil, err
 		}
@@ -240,7 +240,6 @@ func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 
 	// the lens of a dual-lens camera is the camera's zoom (lens.go)
 	handle("lens", "POST", func(r *http.Request, name string) (any, error) {
-		manual(name)
 		tele := teleZoom(name)
 		if tele == 0 {
 			return nil, errors.New("the camera has one lens")
@@ -253,6 +252,7 @@ func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 		default:
 			return nil, errors.New("name must be wide or tele")
 		}
+		manual(name)
 		if err := ensureSession(name); err != nil {
 			return nil, err
 		}
@@ -272,7 +272,6 @@ func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 
 	// turn to motor coordinates (from GET position); zoom 1.0-9.0, default: the current one
 	handle("position/goto", "POST", func(r *http.Request, name string) (any, error) {
-		manual(name)
 		q := r.URL.Query()
 		x, errX := strconv.Atoi(q.Get("x"))
 		y, errY := strconv.Atoi(q.Get("y"))
@@ -286,6 +285,7 @@ func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 			}
 			p.Scale = int(z*10 + 0.5)
 		}
+		manual(name)
 		if err := xccore.GotoPositionSteady(name, p); err != nil {
 			return nil, err
 		}

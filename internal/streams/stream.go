@@ -61,6 +61,13 @@ func (s *Stream) SetSource(source string) {
 	}
 }
 
+// SetSourceInPlace - SetSource without dropping the consumers (Producer.SetSourceInPlace).
+func (s *Stream) SetSourceInPlace(source string) {
+	for _, prod := range s.producers {
+		prod.SetSourceInPlace(source)
+	}
+}
+
 // Conns returns connected producers of the stream.
 func (s *Stream) Conns() []core.Producer {
 	s.mu.Lock()

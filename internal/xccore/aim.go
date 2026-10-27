@@ -154,7 +154,16 @@ func gotoPath(camera string, path []Position) error {
 	go func() {
 		defer mu.Unlock()
 		for i := 0; i < 3; i++ {
-			if putPresetsAsIs(camera, keep) == nil {
+			list := keep
+			if now, e := GetPresets(camera); e == nil { // Mi Home may have changed the list meanwhile
+				list = nil
+				for _, q := range now {
+					if q.Name != aimName {
+						list = append(list, q)
+					}
+				}
+			}
+			if putPresetsAsIs(camera, list) == nil {
 				return
 			}
 			time.Sleep(time.Second)
@@ -183,7 +192,7 @@ func waitPosition(camera string, p Position, max time.Duration) error {
 	t0, changed := time.Now(), time.Now()
 	for time.Since(t0) < max {
 		// each read is a cloud call (~0.5 s): asked often, the arrival is seen sooner
-		time.Sleep(300 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		now, err := MotorPosition(camera)
 		if err != nil {
 			continue

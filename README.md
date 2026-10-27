@@ -15,6 +15,15 @@ see [Android](#android).
 ## Features
 
 - Live video up to **2.5K** (2560×1440), quality 2.5K / 720p / SD.
+- **Two lenses of the CW700S** (Wide | Tele next to the zoom): the camera switches to its
+  telephoto sensor at zoom 2.8× (about 3× the detail of the wide lens cropped); the zoom steps
+  stop there on the way. **Aim with a click**: Ctrl+click on the picture (or the aim button and
+  a click) turns the camera so that the point comes to the centre of the telephoto lens; on the
+  telephoto lens the wide picture stays in the corner with a frame of where the lens looks, and a
+  click on it aims there. **Back to watching** (Settings → General, off by default): a camera
+  turned or zoomed by hand goes back where it stood after N idle minutes, so a detector or a
+  broadcast watching from a fixed view is never left blind. **Turn the picture 180°** (☰ menu):
+  a camera hung upside down turns its own picture, so every viewer and recording is upright.
 - **IP cameras** (Cameras → Add camera → IP camera):
   - **ONVIF** – the camera gives its stream addresses itself; **Search network** finds ONVIF
     cameras in the local network (WS-Discovery).
@@ -275,6 +284,7 @@ Build: `make apk VERSION=vX.Y.Z` (needs JDK 17, Android SDK + NDK and gomobile, 
 | `+` / `−`, mouse wheel | camera zoom |
 | `0` | zoom 1× |
 | `1`, `2`, `3` | turn to camera point 1–3 |
+| Ctrl+click on the picture | aim the camera at that point (telephoto lens) |
 | `H` | video-only mode; `Esc` or right click to go back |
 | `F`, `F11`, double click | full screen |
 | `S` | snapshot |
@@ -364,6 +374,9 @@ default is the first camera.
 | `get_camera_state` | – | zoom, spotlight on/off and brightness, siren |
 | `move_camera` | `direction` (`left`/`right`/`up`/`down`), `steps` (default 10, max 100; 1 step = 0.1 s of movement) | pan/tilt |
 | `set_zoom` | `zoom` (1.0–9.0) | camera zoom |
+| `set_lens` | `lens` (`wide`/`tele`) | the lens of a dual-lens camera (CW700S) |
+| `aim_camera` | `x`, `y` (-0.5..0.5 from the centre of the picture), `lens` | turns the camera so that the point of the picture comes to the centre |
+| `get_camera_control` | – | whether the camera is away from its watch view and when it goes back |
 | `set_spotlight` | `on` (bool), `brightness` (0–100) | spotlight |
 | `set_siren` | `on` (bool) | alarm siren |
 | `list_points` | – | camera points 1–3 and their names |
@@ -391,6 +404,13 @@ camera. Errors return a non-200 status with a text message.
 | GET | `/api/xiaomi-cam/state` | – | `{"zoom", "spotlight", "spotlight_brightness", "siren"}` |
 | POST | `/api/xiaomi-cam/move` | `direction` = `left`/`right`/`up`/`down`, `steps` (1–100, 1 step = 0.1 s of movement) | `{"moved", "steps"}` |
 | POST | `/api/xiaomi-cam/zoom` | `value` (1.0–9.0) | `{"zoom"}` |
+| POST | `/api/xiaomi-cam/lens` | `name` = `wide`/`tele` | `{"lens", "zoom"}` – the lens of a dual-lens camera; `GET state` shows `lens` and `tele_zoom` |
+| POST | `/api/xiaomi-cam/rotation` | `deg` = 0/90/180/270 | `{"rotation"}` – the camera turns its own picture; `GET state` shows `rotation` |
+| GET | `/api/xiaomi-cam/position` | – | `{"x", "y", "scale"}` – motor position and zoom×10 |
+| POST | `/api/xiaomi-cam/position/goto` | `x`, `y`, `zoom` (optional) | turns to motor coordinates (steady: the same pixels every time) |
+| POST | `/api/xiaomi-cam/aim` | `x`, `y` (-0.5..0.5 from the centre of the picture), `lens` (`tele`/`wide`/empty) | `{"position", "zoom"}` – the point comes to the centre of the lens |
+| GET | `/api/xiaomi-cam/control` | – | `{"away", "returns_in_s", "home", "moving", "return_after_min"}` – manual control and the way back to the watch view; `moving`: the app turns or zooms the camera now (+4 s) |
+| POST | `/api/xiaomi-cam/control/return` | – | back to the watch view now |
 | POST | `/api/xiaomi-cam/spotlight` | `on` (`true`/`false`), `brightness` (0–100) | `{"ok": true}` |
 | POST | `/api/xiaomi-cam/siren` | `on` (`true`/`false`) | `{"siren"}` |
 | POST | `/api/xiaomi-cam/snapshot/save` | – | `{"file"}` – JPEG saved to the snapshots folder |
@@ -451,6 +471,8 @@ stream, so the app and OBS share one camera session. Recommended Media Source se
 FFmpeg options `rtsp_transport=tcp fflags=nobuffer timeout=5000000`, network buffering 0 MB
 (a 1 Mbps camera stream has seconds of delay in 1 MB), "Show nothing when playback ends" on.
 Without the `timeout` option OBS keeps waiting on a dead connection after an app restart.
+Switching the camera on air keeps the viewers' sessions: OBS sees the old camera until the new
+one answers, on one continuous timeline.
 
 ## How it works
 

@@ -53,7 +53,9 @@ func (u *ui) initAim() {
 	go u.guard.watchRest(cameraNames)
 	go func() { // the countdown on the back button
 		for range time.Tick(time.Second) {
-			fyne.Do(u.showBack)
+			if u.guard.anyAway() { // (nothing to count down otherwise: the UI thread stays idle)
+				fyne.Do(u.showBack)
+			}
 		}
 	}()
 }

@@ -96,25 +96,25 @@ func NewSender(media *Media, codec *Codec) *Sender {
 		Media: media,
 		buf:   buf,
 	}
-	// One timeline for the viewer across a change of source: when the stream's source is
-	// switched in place (Producer.SetSource - the on-air camera), this sender gets the new
-	// source's packets, whose RTP clock starts anywhere. A jump of more than jumpS forward or
-	// backS back is closed up to one frame after the last packet sent, so a player (OBS) sees a
-	// continuous stream, not a timestamp leap (ffmpeg's muxer failed on it, Oct 26).
+	// One timeline for the viewer across a change of source: when the sender's tracks are
+	// moved to another source (MoveNode: the on-air camera switched in place, a reconnect),
+	// the first packet of the new source, whose RTP clock starts anywhere, is placed one
+	// frame after the last packet sent, so a player (OBS) sees a continuous stream, not a
+	// timestamp leap (ffmpeg's muxer failed on it, Oct 26). A gap in one source is never
+	// closed: a recording keeps the real time of a stall.
 	clock := codec.ClockRate
 	if clock == 0 {
 		clock = 90000
 	}
 	var lastIn, offset uint32
 	var seen bool
-	const jumpS, backS, frames = 3, 1, 25
+	const frames = 25
 	s.Input = func(packet *Packet) {
 		s.mu.Lock()
-		if !seen {
-			seen = true
-		} else if d := int64(int32(packet.Timestamp - lastIn)); d > jumpS*int64(clock) || d < -backS*int64(clock) {
+		if s.rejoin.Swap(false) && seen {
 			offset = lastIn + offset + clock/frames - packet.Timestamp
 		}
+		seen = true
 		lastIn = packet.Timestamp
 		if offset != 0 {
 			p := *packet // (the same packet goes to every viewer: change a copy)

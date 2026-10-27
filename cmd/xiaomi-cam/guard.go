@@ -21,9 +21,9 @@ var watchReturnChoices = []int{0, 1, 3, 5, 10, 30}
 
 func watchReturnMinutes() int {
 	if appPrefs == nil {
-		return 3
+		return 0
 	}
-	return appPrefs.IntWithFallback(prefWatchReturn, 3)
+	return appPrefs.IntWithFallback(prefWatchReturn, 0)
 }
 
 type watchGuard struct {
@@ -140,6 +140,13 @@ func (g *watchGuard) goBack(name string) error {
 	g.mu.Unlock()
 	g.notify(name, err)
 	return err
+}
+
+// anyAway reports whether some camera is away from its watch view (the countdown runs).
+func (g *watchGuard) anyAway() bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return len(g.away) > 0
 }
 
 // state of a camera: away (under manual control), when it goes back, where to.

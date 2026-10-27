@@ -49,7 +49,7 @@ func OnAirCamera() string {
 func SetOnAir(name string) error {
 	src := onAirSource(name)
 	if s := streams.Get(OnAirStream); s != nil {
-		s.SetSource(src)
+		s.SetSourceInPlace(src)
 	} else if _, err := streams.New(OnAirStream, src); err != nil {
 		return err
 	}
