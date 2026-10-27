@@ -67,7 +67,22 @@ func (p *Producer) SetSource(s string) {
 	if changed {
 		p.gen++
 	}
+	running := changed && p.state == stateStart && p.conn != nil
+	var id int
+	if running {
+		p.workerID++ // (the old connection's worker then ends without reconnecting)
+		id = p.workerID
+	}
 	p.mu.Unlock()
+	if running {
+		// A running stream changes its source in place: reconnect dials the new url, moves the
+		// consumers' tracks onto it (receiver.Replace) and only then stops the old connection, so
+		// a viewer keeps its session - OBS on the on-air stream switches camera without a drop,
+		// and sees the old camera until the new source answers. (stop() here closed the tracks
+		// with the viewers on them; stopping the old connection first did too.)
+		go p.reconnect(id, 0)
+		return
+	}
 	if changed {
 		p.stop()
 	}
