@@ -232,6 +232,11 @@ const (
 var ErrNotXiaomi = errors.New("this camera has no such control")
 
 func Motor(name string, op int) error {
+	if op == motorStop {
+		markMoving(name, movingSettle)
+	} else {
+		markMoving(name, 2*time.Second) // repeated every 200 ms while held; a lost stop: the camera stops by itself
+	}
 	if CameraSource(name) == "" {
 		c, err := ipControl(name)
 		if err != nil {
@@ -267,6 +272,7 @@ func CameraZoom(name string, zoom float64) error {
 		return ErrNotXiaomi
 	}
 	value := int(zoom*10 + 0.5)
+	markMoving(name, 2*time.Second+movingSettle) // the zoom runs ~1-2 s (and may change the lens)
 	if err := xiaomi.Command(name, cmdZoomSet, fmt.Sprintf(`{"value":%d}`, value)); err != nil {
 		return SetProp(name, PropZoom, value)
 	}
@@ -313,6 +319,10 @@ var (
 	PropSiren      = MiotProp{Siid: 6, Piid: 10} // hl-audible-alarm
 	PropZoom       = MiotProp{Siid: 6, Piid: 23} // zoom ratio *10 (not in public spec, from Mi Home plugin)
 	PropSDStatus   = MiotProp{Siid: 4, Piid: 1}
+	// image-rollover 0/90/180/270: the camera turns its own picture, so every viewer, the
+	// recordings and the RTSP stream get it upright - a camera hung upside down to tilt up to
+	// the sky (Mi Home has no such setting for the CW700S)
+	PropImageRollover = MiotProp{Siid: 2, Piid: 2}
 )
 
 func CameraDid(src string) string {

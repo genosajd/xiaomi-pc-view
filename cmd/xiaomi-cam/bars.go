@@ -1,10 +1,15 @@
 package main
 
 import (
+	"fmt"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+
+	"github.com/AlexxIT/go2rtc/internal/xccore"
 )
 
 // Compact bars: less used controls are in a menu (top bar) and a panel (bottom bar), so the
@@ -20,6 +25,10 @@ func (u *ui) appMenuButton() *ptrButton {
 			fyne.NewMenuItemWithIcon(TM("Pełny ekran (F, F11, podwójne kliknięcie)"), theme.ViewFullScreenIcon(), u.toggleFullScreen),
 			fyne.NewMenuItemSeparator(),
 			fyne.NewMenuItemWithIcon(TM("Kamery – dodawanie, zmiana nazwy, usuwanie"), cameraIcon, u.showCameras),
+		}
+		if xccore.CanTurnPicture(u.camera.Selected) {
+			items = append(items, fyne.NewMenuItemWithIcon(TM("Obróć obraz o 180° (kamera zawieszona do góry nogami)"),
+				theme.ViewRefreshIcon(), u.turnPicture))
 		}
 		if len(cameraEvents(u.camera.Selected)) > 0 {
 			items = append(items,
@@ -40,6 +49,35 @@ func (u *ui) appMenuButton() *ptrButton {
 		showMenuBelow(b, fyne.NewMenu("", items...))
 	}).withTip(T("Menu: tylko obraz, pełny ekran, kamery, zdarzenia, język, skróty klawiaturowe i wersja"))
 	return b
+}
+
+// turnPicture turns the camera's own picture by 180° (0 <-> 180): a camera hung upside down
+// to tilt up to the sky shows the sky upright - in every viewer and recording, as the camera
+// itself sends it turned. The Mi cloud answers off the UI thread.
+func (u *ui) turnPicture() {
+	name := u.camera.Selected
+	var err error
+	var now int
+	inBackground(u.win, func() {
+		props, e := getProps(name, propImageRollover)
+		if e != nil || len(props) == 0 || props[0].Code != 0 {
+			err = fmt.Errorf("%s", T("Kamera nie podała obrotu obrazu"))
+			if e != nil {
+				err = e
+			}
+			return
+		}
+		cur, _ := props[0].Value.(float64)
+		now = 180
+		if int(cur) == 180 {
+			now = 0
+		}
+		err = setProp(name, propImageRollover, now)
+	}, func() {
+		if err != nil {
+			dialog.ShowError(err, u.win)
+		}
+	})
 }
 
 // showMenuBelow opens a menu under the button, aligned to its right edge.

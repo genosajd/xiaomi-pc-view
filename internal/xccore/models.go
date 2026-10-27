@@ -64,6 +64,16 @@ func specOf(src string) *ModelSpec {
 	return SpecForModel(SourceParam(src, "model"))
 }
 
+// CanTurnPicture reports whether the camera turns its own picture (PropImageRollover).
+func CanTurnPicture(name string) bool {
+	src := CameraSource(name)
+	if src == "" {
+		return false
+	}
+	_, ok := specOf(src).mapProp(PropImageRollover)
+	return ok
+}
+
 // mapProp returns the model's property for a 700sa property (false: the model has none).
 func (s *ModelSpec) mapProp(p MiotProp) (MiotProp, bool) {
 	if s == nil {

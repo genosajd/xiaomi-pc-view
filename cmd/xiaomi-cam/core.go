@@ -37,6 +37,7 @@ var (
 	propNightShot     = xccore.PropNightShot
 	propWDR           = xccore.PropWDR
 	propLowLightColor = xccore.PropLowLightColor
+	propImageRollover = xccore.PropImageRollover
 	propMotorLocation = xccore.PropMotorLocation
 	propPresets       = xccore.PropPresets
 	propPresetActive  = xccore.PropPresetActive
@@ -56,6 +57,7 @@ var (
 	cameraEvents     = xccore.CameraEvents
 	getDetection     = xccore.GetDetection
 	cameraZoom       = xccore.CameraZoom
+	teleZoom         = xccore.TeleZoom
 	currentZoom      = xccore.CurrentZoom
 	setZoomState     = xccore.SetZoomState
 	cameraDid        = xccore.CameraDid

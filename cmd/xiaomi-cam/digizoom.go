@@ -150,6 +150,10 @@ func (v *videoView) layoutMini() {
 	mw := min(200, max(110, sw*0.18))
 	mh := mw * sh / max(sw, 1)
 	mx, my := sx+12, sy+12
+	if v.wideOn { // under the overview of the wide lens
+		_, wy, _, wh := v.wideArea()
+		my = wy + wh + 8
+	}
 	d := &v.dz
 	d.mini.Move(fyne.NewPos(mx, my))
 	d.mini.Resize(fyne.NewSize(mw, mh))

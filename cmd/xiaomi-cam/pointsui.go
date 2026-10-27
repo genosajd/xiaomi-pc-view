@@ -107,6 +107,9 @@ func (u *ui) pointPressed(slot int) {
 		u.status.SetText(fmt.Sprintf(T("Obracam do punktu %d (%s)…"), slot, p.Label()))
 		pt := *p
 		done := u.busy(b)
+		if u.guard != nil {
+			u.guard.touch(name)
+		}
 		go func() {
 			err := gotoPreset(name, pt.Idx)
 			if err == nil {

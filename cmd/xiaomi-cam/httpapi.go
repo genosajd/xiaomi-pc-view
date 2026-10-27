@@ -27,6 +27,16 @@ import (
 //	POST /api/xiaomi-cam/picture?wdr=true&low_light_color=false  picture settings (models that have them)
 //	POST /api/xiaomi-cam/move?direction=left&steps=5 left/right/up/down, 1 step = 0.1 s of movement
 //	POST /api/xiaomi-cam/zoom?value=2.5              1.0-9.0 (camera zoom)
+//	POST /api/xiaomi-cam/lens?name=tele              wide/tele lens of a dual-lens camera (CW700S: tele = zoom 2.8)
+//	GET  /api/xiaomi-cam/position                    motor position {x, y, scale = zoom*10}
+//	POST /api/xiaomi-cam/position/goto?x=&y=&zoom=   turn to motor coordinates (and zoom)
+//	POST /api/xiaomi-cam/aim?x=0.2&y=-0.1&lens=tele  turn to a point of the picture (fractions of it from
+//	                                                  its centre, -0.5..0.5); lens tele/wide/"" (the current)
+//	GET  /api/xiaomi-cam/control                     manual control: away from the watch view, back in s;
+//	                                                  moving - the app turns/zooms the camera (+4 s after)
+//	POST /api/xiaomi-cam/control/return              back to the watch view now
+//	Turning, zoom, lens, aiming and points by the API count as manual control: the camera goes
+//	back to where it looked before after the minutes set in the app (Settings → General).
 //	POST /api/xiaomi-cam/spotlight?on=true&brightness=80
 //	POST /api/xiaomi-cam/siren?on=true
 //	POST /api/xiaomi-cam/night-mode?mode=auto         auto/auto-color/smart-color/on/color/off
@@ -41,6 +51,19 @@ import (
 //	GET  /api/xiaomi-cam/events?hours=24             camera events (motion, person, car, fence)
 //	GET  /api/xiaomi-cam/onair                       the camera on air and the RTSP address for OBS
 //	POST /api/xiaomi-cam/onair?camera=name           put a camera on air
+//
+// apiManual / apiGuard - manual control of a camera through the API (guard.go), set by the UI.
+var (
+	apiManual func(name string)
+	apiGuard  *watchGuard
+)
+
+func manual(name string) {
+	if apiManual != nil {
+		apiManual(name)
+	}
+}
+
 func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 	handle := func(path, method string, f func(r *http.Request, name string) (any, error)) {
 		api.HandleFunc("api/xiaomi-cam/"+path, func(w http.ResponseWriter, r *http.Request) {
@@ -124,11 +147,18 @@ func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 			}
 			return state, nil
 		}
-		props, err := getProps(name, propLight, propBrightness, propSiren, propNightShot, propWDR, propLowLightColor)
+		props, err := getProps(name, propLight, propBrightness, propSiren, propNightShot, propWDR, propLowLightColor,
+			propImageRollover)
 		if err != nil {
 			return nil, err
 		}
 		state := map[string]any{"camera": name, "zoom": currentZoom(name)}
+		if tele := teleZoom(name); tele > 0 {
+			state["lens"], state["tele_zoom"] = "wide", tele
+			if onTele(currentZoom(name), tele) {
+				state["lens"] = "tele"
+			}
+		}
 		if c := ipCam(name); c != nil { // Imou: the light, siren and night mode in the cloud
 			state = map[string]any{"camera": name, "type": kindName(c.Kind), "quality": currentQuality(name).name}
 		}
@@ -142,6 +172,9 @@ func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 				continue
 			case p.Same(propLowLightColor):
 				state["low_light_color"] = p.Value
+				continue
+			case p.Same(propImageRollover):
+				state["rotation"] = p.Value
 				continue
 			}
 			switch p.Piid {
@@ -163,6 +196,7 @@ func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 	})
 
 	handle("move", "POST", func(r *http.Request, name string) (any, error) {
+		manual(name)
 		ops := map[string]int{"left": motorLeft, "right": motorRight, "up": motorUp, "down": motorDown}
 		dir := r.URL.Query().Get("direction")
 		op, ok := ops[dir]
@@ -186,6 +220,7 @@ func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 	})
 
 	handle("zoom", "POST", func(r *http.Request, name string) (any, error) {
+		manual(name)
 		z, err := strconv.ParseFloat(r.URL.Query().Get("value"), 64)
 		if err != nil || z < 1 || z > maxZoom {
 			return nil, fmt.Errorf("value must be 1.0-%.1f", maxZoom)
@@ -201,6 +236,110 @@ func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 			zoomChanged(name, z)
 		}
 		return map[string]any{"zoom": z}, nil
+	})
+
+	// the lens of a dual-lens camera is the camera's zoom (lens.go)
+	handle("lens", "POST", func(r *http.Request, name string) (any, error) {
+		manual(name)
+		tele := teleZoom(name)
+		if tele == 0 {
+			return nil, errors.New("the camera has one lens")
+		}
+		lens, z := r.URL.Query().Get("name"), 1.0
+		switch lens {
+		case "tele":
+			z = tele
+		case "wide":
+		default:
+			return nil, errors.New("name must be wide or tele")
+		}
+		if err := ensureSession(name); err != nil {
+			return nil, err
+		}
+		if err := cameraZoom(name, z); err != nil {
+			return nil, err
+		}
+		setZoomState(name, z)
+		if zoomChanged != nil {
+			zoomChanged(name, z)
+		}
+		return map[string]any{"lens": lens, "zoom": z}, nil
+	})
+
+	handle("position", "GET", func(r *http.Request, name string) (any, error) {
+		return xccore.MotorPosition(name)
+	})
+
+	// turn to motor coordinates (from GET position); zoom 1.0-9.0, default: the current one
+	handle("position/goto", "POST", func(r *http.Request, name string) (any, error) {
+		manual(name)
+		q := r.URL.Query()
+		x, errX := strconv.Atoi(q.Get("x"))
+		y, errY := strconv.Atoi(q.Get("y"))
+		if errX != nil || errY != nil {
+			return nil, errors.New("x and y must be motor coordinates (GET position)")
+		}
+		p := xccore.Position{X: x, Y: y}
+		if z, err := strconv.ParseFloat(q.Get("zoom"), 64); err == nil {
+			if z < 1 || z > maxZoom {
+				return nil, fmt.Errorf("zoom must be 1.0-%.1f", maxZoom)
+			}
+			p.Scale = int(z*10 + 0.5)
+		}
+		if err := xccore.GotoPositionSteady(name, p); err != nil {
+			return nil, err
+		}
+		if zoomChanged != nil {
+			zoomChanged(name, currentZoom(name))
+		}
+		return xccore.MotorPosition(name)
+	})
+
+	handle("aim", "POST", func(r *http.Request, name string) (any, error) {
+		q := r.URL.Query()
+		fx, errX := strconv.ParseFloat(q.Get("x"), 64)
+		fy, errY := strconv.ParseFloat(q.Get("y"), 64)
+		if errX != nil || errY != nil {
+			return nil, errors.New("x and y must be the point of the picture: fractions of it from its centre, -0.5..0.5")
+		}
+		manual(name)
+		p, err := xccore.AimAt(name, fx, fy, q.Get("lens"))
+		if err != nil {
+			return nil, err
+		}
+		if zoomChanged != nil {
+			zoomChanged(name, currentZoom(name))
+		}
+		return map[string]any{"position": p, "zoom": currentZoom(name)}, nil
+	})
+
+	handle("control", "GET", func(r *http.Request, name string) (any, error) {
+		res := map[string]any{"camera": name, "return_after_min": watchReturnMinutes(), "away": false,
+			"moving": xccore.Moving(name)} // turned or zoomed by the app now (or a few seconds ago)
+		if apiGuard == nil {
+			return res, nil
+		}
+		away, returning, until, home := apiGuard.state(name)
+		res["away"] = away
+		if away {
+			res["returning"] = returning
+			res["returns_in_s"] = int(max(time.Until(until), 0).Seconds())
+			res["home"] = home
+		}
+		return res, nil
+	})
+
+	handle("control/return", "POST", func(r *http.Request, name string) (any, error) {
+		if apiGuard == nil {
+			return nil, errors.New("not ready")
+		}
+		if away, _, _, _ := apiGuard.state(name); !away {
+			return map[string]any{"camera": name, "away": false}, nil
+		}
+		if err := apiGuard.goBack(name); err != nil {
+			return nil, err
+		}
+		return xccore.MotorPosition(name)
 	})
 
 	handle("spotlight", "POST", func(r *http.Request, name string) (any, error) {
@@ -232,6 +371,18 @@ func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 			}
 		}
 		return map[string]any{"ok": true}, nil
+	})
+
+	// the camera turns its own picture (?deg=0|90|180|270): a camera hung upside down
+	handle("rotation", "POST", func(r *http.Request, name string) (any, error) {
+		deg, err := strconv.Atoi(r.URL.Query().Get("deg"))
+		if err != nil || deg < 0 || deg > 270 || deg%90 != 0 {
+			return nil, fmt.Errorf("deg: 0, 90, 180 or 270")
+		}
+		if err = setProp(name, propImageRollover, deg); err != nil {
+			return nil, err
+		}
+		return map[string]any{"rotation": deg}, nil
 	})
 
 	handle("night-mode", "POST", func(r *http.Request, name string) (any, error) {
@@ -343,6 +494,7 @@ func initHTTPAPI(zoomChanged func(name string, zoom float64)) {
 	})
 
 	handle("points/goto", "POST", func(r *http.Request, name string) (any, error) {
+		manual(name)
 		p, err := findPoint(name, r.URL.Query().Get("point"))
 		if err != nil {
 			return nil, err

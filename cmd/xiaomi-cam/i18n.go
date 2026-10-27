@@ -75,6 +75,25 @@ func translate(pl string) (string, bool) {
 }
 
 var english = map[string]string{
+	// aiming in the picture, back to the watch view (aimui.go, guard.go)
+	"Powrót do obserwacji": "Back to watching",
+	"Kamera obrócona albo przybliżona ręcznie (też przez API lub AI) wraca sama tam, gdzie patrzyła wcześniej, po tylu minutach bez sterowania – żeby obserwacja (wykrywanie na niebie, nagrywanie, transmisja) nie została ślepa": "A camera turned or zoomed by hand (also through the API or AI) goes back by itself to where it looked before after these minutes without control – so the watching (sky detection, recording, the broadcast) doesn't stay blind",
+	"Wróć do widoku obserwacji teraz – kamera wróci sama za %s": "Back to the watch view now – the camera goes back by itself in %s",
+	"Wracam do widoku obserwacji…":                              "Going back to the watch view…",
+	"Kamera wróciła do widoku obserwacji":                       "The camera is back on the watch view",
+	"Powrót do obserwacji: ":                                    "Back to watching: ",
+	"Celowanie: kliknij punkt na obrazie – kamera obróci się do niego i przełączy na teleobiektyw (albo Ctrl+klik na obrazie)": "Aim: click a point of the picture – the camera turns to it and switches to the telephoto lens (or Ctrl+click on the picture)",
+	"Celuję kamerę…":    "Aiming the camera…",
+	"Kamera wycelowana": "The camera is aimed",
+	"Celowanie: ":       "Aiming: ",
+	"Kliknij punkt na obrazie, do którego ma się obrócić kamera (Esc – anuluj)":                     "Click the point of the picture the camera should turn to (Esc – cancel)",
+	"Kamera jeszcze się obraca, a obraz dochodzi z opóźnieniem około sekundy – kliknij, gdy stanie": "The camera is still turning and its picture comes about a second late – click when it stands still",
+
+	// the lens of a dual-lens camera (lens.go)
+	"Szeroki": "Wide",
+	"Tele":    "Tele",
+	"Obiektyw kamery: szeroki kąt albo teleobiektyw – ostre szczegóły z daleka. Kamera wysyła obraz jednego obiektywu naraz, więc widzą go wszyscy, którzy oglądają tę kamerę (OBS, inne programy)": "The camera's lens: wide angle or telephoto – sharp details far away. The camera sends one lens at a time, so everyone watching this camera sees it (OBS, other programs)",
+
 	"Telefon":             "Phone",
 	"Strona dla telefonu": "Phone page",
 	"Podgląd i sterowanie kamer w przeglądarce telefonu": "Live view and camera controls in a phone browser",
@@ -347,6 +366,11 @@ Closing the window hides the app to the tray`,
 	"Skróty klawiaturowe i wersja":                               "Keyboard shortcuts and version",
 	"Oddal – zoom kamery (−, kółko myszy)":                       "Zoom out – camera zoom (−, mouse wheel)",
 	"Przybliż – zoom kamery do 9× (+, kółko myszy)":              "Zoom in – camera zoom up to 9× (+, mouse wheel)",
+
+	// picture rotation (bars.go)
+	"Obróć obraz o 180° (kamera zawieszona do góry nogami)": "Turn the picture 180° (camera hung upside down)",
+	"Kamera nie podała obrotu obrazu":                       "The camera did not say how its picture is turned",
+
 	"Zoom 1× (0)": "Zoom 1× (0)",
 	"Wróć do widoku z panelami i ramką okna (Esc, prawy przycisk myszy)": "Back to the view with panels and window frame (Esc, right click)",
 	"Przesuń okno – przeciągnij":                                         "Move the window – drag",

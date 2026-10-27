@@ -100,6 +100,7 @@ func DeletePreset(camera string, idx int) error {
 
 // GotoPreset turns the camera to a stored position.
 func GotoPreset(camera string, idx int) error {
+	markMoving(camera, 15*time.Second) // a point can be half a turn away (GotoPresetAndWait ends it sooner)
 	if IPCam(camera) != nil {
 		_, err := gotoIPPoint(camera, idx)
 		return err
@@ -153,6 +154,7 @@ func GotoPresetAndWait(camera string, idx int) error {
 	if err := GotoPreset(camera, idx); err != nil {
 		return err
 	}
+	defer markMoving(camera, movingSettle)
 	var last string
 	for i := 0; i < 15; i++ {
 		time.Sleep(time.Second)

@@ -81,9 +81,39 @@ func runMCP() error {
 		cameraArg
 		Zoom float64 `json:"zoom" jsonschema:"camera zoom from 1.0 (wide) to 9.0"`
 	}
-	mcp.AddTool(server, &mcp.Tool{Name: "set_zoom", Description: "Set the camera zoom (done by the camera, sharp details)."},
+	mcp.AddTool(server, &mcp.Tool{Name: "set_zoom", Description: "Set the camera zoom (done by the camera, sharp details). " +
+		"A dual-lens camera (get_camera_state has tele_zoom) switches to its telephoto lens at tele_zoom: the sharpest far detail."},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in zoomArgs) (*mcp.CallToolResult, any, error) {
 			return apiText("POST", "zoom", url.Values{"camera": {in.Camera}, "value": {strconv.FormatFloat(in.Zoom, 'f', 1, 64)}})
+		})
+
+	type aimArgs struct {
+		cameraArg
+		X    float64 `json:"x" jsonschema:"the point across the picture as a fraction of its width from the centre: -0.5 left edge, 0 centre, 0.5 right edge"`
+		Y    float64 `json:"y" jsonschema:"the point down the picture as a fraction of its height from the centre: -0.5 top, 0.5 bottom"`
+		Lens string  `json:"lens,omitempty" jsonschema:"tele (look closer), wide, or empty: the lens the camera is on"`
+	}
+	mcp.AddTool(server, &mcp.Tool{Name: "aim_camera", Description: "Turn a CW700S camera so that a point of its current picture comes to the centre " +
+		"(take a snapshot first and pick the point in it); with lens=tele it also switches to the telephoto lens to look closer. " +
+		"Manual control: the camera goes back to its watch view after a few idle minutes (get_camera_control)."},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in aimArgs) (*mcp.CallToolResult, any, error) {
+			return apiText("POST", "aim", url.Values{"camera": {in.Camera}, "x": {strconv.FormatFloat(in.X, 'f', 3, 64)},
+				"y": {strconv.FormatFloat(in.Y, 'f', 3, 64)}, "lens": {in.Lens}})
+		})
+	mcp.AddTool(server, &mcp.Tool{Name: "get_camera_control", Description: "Whether a camera is away from its watch view after manual control, " +
+		"and in how many seconds it goes back by itself."},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in cameraArg) (*mcp.CallToolResult, any, error) {
+			return apiText("GET", "control", url.Values{"camera": {in.Camera}})
+		})
+
+	type lensArgs struct {
+		cameraArg
+		Lens string `json:"lens" jsonschema:"wide or tele"`
+	}
+	mcp.AddTool(server, &mcp.Tool{Name: "set_lens", Description: "Switch a dual-lens camera (CW700S) between its wide-angle and telephoto lens. " +
+		"The camera sends one lens at a time: everyone watching the camera sees the lens chosen."},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in lensArgs) (*mcp.CallToolResult, any, error) {
+			return apiText("POST", "lens", url.Values{"camera": {in.Camera}, "name": {in.Lens}})
 		})
 
 	type spotlightArgs struct {

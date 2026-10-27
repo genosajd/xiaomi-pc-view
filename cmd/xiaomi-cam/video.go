@@ -261,6 +261,18 @@ type videoView struct {
 	onCameraDrag    func(dx, dy float32)             // dragging the picture moves the camera
 	onCameraDragEnd func()                           // mouse released: stop the camera
 	onScroll        func(up bool, pos fyne.Position) // mouse wheel - zoom (camera, then digital)
+	// a click to aim the camera at (fractions of the picture from its centre): true - done
+	// (Ctrl+click or the aim mode, aimui.go)
+	onAimTap  func(fx, fy float64) bool
+	onWideTap func(fx, fy float64) // a click on the overview of the wide lens
+	aimMode   bool                 // the next click aims: crosshair cursor
+	ctrlDown  bool                 // the click started with Ctrl held
+
+	// the wide picture kept while the camera is on its telephoto lens, with the lens's frame
+	wideImg            *canvas.Image
+	wideFrame, wideBox *canvas.Rectangle
+	wideRect           [4]float64 // the frame: centre (from the picture's centre) and size, fractions
+	wideOn             bool
 
 	// window resize by edges (window without frame)
 	canResize   func() bool
@@ -305,6 +317,9 @@ func (v *videoView) edgeAt(pos fyne.Position) int {
 
 // Cursor shows resize arrows over the edges of a window without frame.
 func (v *videoView) Cursor() desktop.Cursor {
+	if v.aimMode && v.edge < 0 {
+		return desktop.CrosshairCursor
+	}
 	switch v.edge {
 	case wmLeft, wmRight:
 		return desktop.HResizeCursor
@@ -320,6 +335,7 @@ func (v *videoView) Cursor() desktop.Cursor {
 
 func (v *videoView) MouseDown(e *desktop.MouseEvent) {
 	v.wmGrab = false
+	v.ctrlDown = e.Modifier&fyne.KeyModifierControl != 0
 	if e.Button != desktop.MouseButtonPrimary {
 		return
 	}
@@ -340,6 +356,7 @@ func newVideoView() *videoView {
 	v.status.Alignment = fyne.TextAlignCenter
 	v.spinner = newSpinner(videoSpinnerFrames)
 	v.dz.init()
+	v.initWide()
 	v.ExtendBaseWidget(v)
 	return v
 }
@@ -466,7 +483,24 @@ func (v *videoView) DragEnd() {
 	}
 }
 
-func (v *videoView) Tapped(*fyne.PointEvent) {
+func (v *videoView) Tapped(e *fyne.PointEvent) {
+	ctrl := v.ctrlDown
+	v.ctrlDown = false
+	if v.wideOn && v.onWideTap != nil {
+		if fx, fy, ok := v.widePointAt(e.Position); ok {
+			v.onWideTap(fx, fy)
+			return
+		}
+	}
+	if (ctrl || v.aimMode) && v.onAimTap != nil {
+		v.ctrlDown = ctrl
+		fx, fy, ok := v.framePoint(e.Position)
+		handled := ok && v.onAimTap(fx, fy)
+		v.ctrlDown = false
+		if handled {
+			return
+		}
+	}
 	if v.onTap != nil {
 		v.onTap()
 	}
@@ -509,6 +543,7 @@ func (r *videoRenderer) Layout(size fyne.Size) {
 	const sp = 32
 	r.v.spinner.Resize(fyne.NewSize(sp, sp))
 	r.v.spinner.Move(fyne.NewPos((size.Width-sp)/2, size.Height/2-20-sp))
+	r.v.layoutWide()
 	r.v.layoutMini()
 }
 
@@ -521,5 +556,6 @@ func (r *videoRenderer) MinSize() fyne.Size {
 func (r *videoRenderer) Refresh() { canvas.Refresh(r.v) }
 func (r *videoRenderer) Destroy() {}
 func (r *videoRenderer) Objects() []fyne.CanvasObject {
-	return []fyne.CanvasObject{r.v.bg, r.v.img, r.v.dz.mini, r.v.dz.miniFrame, r.v.dz.miniBox, r.v.spinner, r.v.status}
+	return []fyne.CanvasObject{r.v.bg, r.v.img, r.v.dz.mini, r.v.dz.miniFrame, r.v.dz.miniBox,
+		r.v.wideImg, r.v.wideFrame, r.v.wideBox, r.v.spinner, r.v.status}
 }

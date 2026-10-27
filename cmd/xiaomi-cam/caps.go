@@ -1,6 +1,9 @@
 package main
 
-import "fyne.io/fyne/v2"
+import (
+	"fyne.io/fyne/v2"
+	"github.com/AlexxIT/go2rtc/internal/xccore"
+)
 
 // updateCaps detects the capabilities of the selected camera (in the background) and
 // shows/hides its controls.
@@ -38,6 +41,12 @@ func (u *ui) applyCaps() {
 	show(c.Points, u.capPoints)
 	show(true, u.capZoom) // the digital zoom works on every camera (digizoom.go)
 	show(c.Zoom, u.capOverlayZoom)
+	show(c.Tele > 0, u.lens)
+	u.showLens(u.camZoom)
+	show(xccore.CanAim(u.camera.Selected), u.aimBtn)
+	u.setAimMode(false)
+	u.showBack()
+	u.showWide()
 	show(c.Light, u.capLight)
 	show(c.Brightness, u.brightness)
 	show(c.Siren, u.siren)

@@ -137,6 +137,26 @@ func (u *ui) showSettings() {
 	}
 	startView.tip = T("Co pokazuje okno po uruchomieniu aplikacji (siatka – przy 2 i więcej kamerach)")
 
+	// the way back to the watch view after manual control (guard.go)
+	var backNames []string
+	for _, m := range watchReturnChoices {
+		if m == 0 {
+			backNames = append(backNames, T("Wyłączony"))
+		} else {
+			backNames = append(backNames, fmt.Sprintf(T("%d min"), m))
+		}
+	}
+	back := newSelect(backNames, nil)
+	for i, m := range watchReturnChoices {
+		if m == watchReturnMinutes() {
+			back.SetSelectedIndex(i)
+		}
+	}
+	back.OnChanged = func(string) {
+		u.app.Preferences().SetInt(prefWatchReturn, watchReturnChoices[max(back.SelectedIndex(), 0)])
+	}
+	back.tip = T("Kamera obrócona albo przybliżona ręcznie (też przez API lub AI) wraca sama tam, gdzie patrzyła wcześniej, po tylu minutach bez sterowania – żeby obserwacja (wykrywanie na niebie, nagrywanie, transmisja) nie została ślepa")
+
 	// the camera on air: one RTSP address for OBS, the camera behind it is chosen here
 	onAirNames := cameraNames()
 	onAir := newSelect(onAirNames, nil)
@@ -183,6 +203,7 @@ func (u *ui) showSettings() {
 		widget.NewFormItem(T("Telefon"), container.NewVBox(phone, phoneHelp)),
 		widget.NewFormItem(T("Start"), autostart),
 		widget.NewFormItem(T("Widok na starcie"), startView),
+		widget.NewFormItem(T("Powrót do obserwacji"), back),
 		widget.NewFormItem(T("Tryb nagrywania"), container.NewVBox(mode, camLabel, camChecks, modeHelp)),
 		widget.NewFormItem(T("Nagrania"), folderRow(prefRecordingsDir, recordingsDir)),
 		widget.NewFormItem(T("Zdjęcia"), folderRow(prefSnapshotsDir, snapshotsDir)),
