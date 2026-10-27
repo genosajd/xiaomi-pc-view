@@ -25,6 +25,7 @@ type Conn struct {
 
 	Backchannel bool
 	Media       string
+	OpusHeaders bool // Ogg Opus headers first on an Opus track (Android Media3)
 	OnClose     func() error
 	PacketSize  uint16
 	SessionName string

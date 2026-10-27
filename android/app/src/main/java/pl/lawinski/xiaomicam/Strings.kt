@@ -1,5 +1,6 @@
 package pl.lawinski.xiaomicam
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
 
@@ -20,6 +21,8 @@ class Strings(
     val zoomIn: String,
     val zoomOut: String,
     val spotlight: String,
+    val soundOn: String,
+    val soundOff: String,
     val nightModeLabel: String,
     private val nightModes: Map<Int, String>,
     private val pointN: String,
@@ -60,7 +63,22 @@ class Strings(
     val error: String,
     val loading: String,
     val version: String,
+    val widgetTitle: String,
+    val widgetPick: String,
+    val widgetNoPicture: String,
+    val widgetRefresh: String,
+    val widgetNoCameras: String,
+    val widgetEvery: String,
+    private val widgetManual: String,
+    private val widgetHour: String,
+    val widgetNote: String,
 ) {
+    fun widgetInterval(min: Int) = when {
+        min == 0 -> widgetManual
+        min % 60 == 0 -> widgetHour.format(min / 60)
+        else -> "$min min"
+    }
+
     fun nightMode(value: Int?): String = nightModes[value] ?: nightModeLabel
     fun point(n: Int) = pointN.format(n)
 }
@@ -76,6 +94,7 @@ private val PL = Strings(
     up = "Do góry", down = "W dół", left = "W lewo", right = "W prawo",
     zoomIn = "Przybliż", zoomOut = "Oddal",
     spotlight = "Reflektor",
+    soundOn = "Włącz dźwięk", soundOff = "Wycisz",
     nightModeLabel = "Tryb nocny",
     nightModes = mapOf(
         2 to "Auto IR", 3 to "Auto kolor", 5 to "Smart kolor",
@@ -119,6 +138,15 @@ private val PL = Strings(
     error = "Błąd: %s",
     loading = "Wczytywanie…",
     version = "Wersja %s",
+    widgetTitle = "Widget kamery",
+    widgetPick = "Wybierz kamerę",
+    widgetNoPicture = "Brak zdjęcia – odśwież",
+    widgetRefresh = "Odśwież",
+    widgetNoCameras = "Najpierw dodaj kamerę w aplikacji.",
+    widgetEvery = "Odświeżaj obraz",
+    widgetManual = "Ręcznie",
+    widgetHour = "%d godz.",
+    widgetNote = "Widget pokazuje ostatnie zdjęcie z kamery, nie wideo. Każde odświeżenie łączy się z kamerą na kilka sekund (kamera Xiaomi obsługuje jedno połączenie naraz). Stuknięcie w obraz otwiera kamerę w aplikacji. Rozmiar zmienisz, przytrzymując widget na ekranie głównym.",
 )
 
 private val EN = Strings(
@@ -132,6 +160,7 @@ private val EN = Strings(
     up = "Up", down = "Down", left = "Left", right = "Right",
     zoomIn = "Zoom in", zoomOut = "Zoom out",
     spotlight = "Spotlight",
+    soundOn = "Sound on", soundOff = "Mute",
     nightModeLabel = "Night mode",
     nightModes = mapOf(
         2 to "Auto IR", 3 to "Auto color", 5 to "Smart color",
@@ -175,8 +204,21 @@ private val EN = Strings(
     error = "Error: %s",
     loading = "Loading…",
     version = "Version %s",
+    widgetTitle = "Camera widget",
+    widgetPick = "Pick a camera",
+    widgetNoPicture = "No picture – refresh",
+    widgetRefresh = "Refresh",
+    widgetNoCameras = "Add a camera in the app first.",
+    widgetEvery = "Refresh the picture",
+    widgetManual = "By hand",
+    widgetHour = "%d h",
+    widgetNote = "The widget shows the last picture of the camera, not video. Each refresh connects to the camera for a few seconds (a Xiaomi camera takes one connection at a time). Tap the picture to open the camera in the app. Resize it by holding the widget on the home screen.",
 )
 
 @Composable
 fun strings(): Strings =
     if (LocalConfiguration.current.locales[0].language == "pl") PL else EN
+
+/** the texts outside Compose (the widget) */
+fun stringsFor(ctx: Context): Strings =
+    if (ctx.resources.configuration.locales[0].language == "pl") PL else EN

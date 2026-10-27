@@ -172,6 +172,10 @@ func (c *Conn) packetWriter(codec *core.Codec, channel, payloadType uint8) core.
 		}
 	}
 
+	if c.OpusHeaders && codec.Name == core.CodecOpus {
+		handlerFunc = c.opusHeaders(codec, handlerFunc)
+	}
+
 	return handlerFunc
 }
 

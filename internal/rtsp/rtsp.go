@@ -204,6 +204,8 @@ func tcpHandler(conn *rtsp.Conn) {
 				})
 			}
 
+			conn.OpusHeaders = query.Get("opus_headers") == "1"
+
 			if s := query.Get("pkt_size"); s != "" {
 				conn.PacketSize = uint16(core.Atoi(s))
 			}

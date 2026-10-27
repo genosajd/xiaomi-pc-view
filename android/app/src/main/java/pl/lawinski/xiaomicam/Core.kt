@@ -62,6 +62,10 @@ object Core {
     }
 
     fun rtspUrl(name: String): String = Mobile.rtspurl(name)
+    fun rtspUrlAudio(name: String): String = Mobile.rtspurlAudio(name)
+
+    /** one key frame of the camera as an MP4 file (the widget picture) */
+    suspend fun keyFrame(name: String, path: String) = io { Mobile.keyFrame(name, path) }
 
     suspend fun cameras(): List<Camera> = io {
         JSONArray(Mobile.cameras()).objects().map {

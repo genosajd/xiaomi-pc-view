@@ -25,7 +25,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.content.Context
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.FlashlightOn
@@ -60,6 +63,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -85,6 +89,7 @@ fun LiveScreen(
     onError: (String) -> Unit,
 ) {
     val s = strings()
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf(VideoStatus.CONNECTING) }
     var statusText by remember { mutableStateOf<String?>(null) }
@@ -95,6 +100,9 @@ fun LiveScreen(
     var points by remember(camera.name) { mutableStateOf<List<Point>>(emptyList()) }
     var state by remember(camera.name) { mutableStateOf(CamState(null, null)) }
     var zoom by remember(camera.name) { mutableStateOf(1.0) }
+    val prefs = remember { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE) }
+    var muted by remember { mutableStateOf(!prefs.getBoolean(PREF_SOUND, false)) }
+    var hasAudio by remember(camera.name) { mutableStateOf(false) }
     var lastInput by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var shown by remember { mutableStateOf(true) }
     val videoFocus = remember { FocusRequester() }
@@ -218,9 +226,12 @@ fun LiveScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 if (ready) CameraPlayer(
-                    url = Core.rtspUrl(camera.name),
+                    url = Core.rtspUrlAudio(camera.name),
+                    videoUrl = Core.rtspUrl(camera.name),
                     key = camera.name to generation,
                     modifier = Modifier.fillMaxSize(),
+                    muted = muted,
+                    onAudio = { hasAudio = it },
                 ) { st, msg ->
                     status = st
                     statusText = msg
@@ -261,6 +272,15 @@ fun LiveScreen(
         val menuButton = @Composable {
             Pill {
                 Row {
+                    if (hasAudio) XcButton(
+                        onClick = {
+                            touch()
+                            muted = !muted
+                            prefs.edit().putBoolean(PREF_SOUND, !muted).apply()
+                        },
+                        icon = if (muted) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp,
+                        label = if (muted) s.soundOn else s.soundOff, size = size,
+                    )
                     if (onGrid != null) XcButton(onClick = onGrid, icon = Icons.Rounded.GridView, label = s.grid, size = size)
                     XcButton(onClick = onMenu, icon = Icons.Rounded.MoreVert, label = s.menu, size = size)
                 }
@@ -365,6 +385,13 @@ fun LiveScreen(
                 Key.Three, Key.NumPad3 -> { points.getOrNull(2)?.let(goto); true }
                 Key.ChannelUp, Key.ZoomIn -> { if (caps.zoom) zoomTo(zoom + 1); true }
                 Key.ChannelDown, Key.ZoomOut -> { if (caps.zoom) zoomTo(zoom - 1); true }
+                Key.VolumeMute, Key.M -> {
+                    if (hasAudio) {
+                        muted = !muted
+                        prefs.edit().putBoolean(PREF_SOUND, !muted).apply()
+                    }
+                    true
+                }
                 else -> false
             }
         }

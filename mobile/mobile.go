@@ -69,9 +69,32 @@ func Cameras() string {
 	return toJSON(list)
 }
 
-// RTSPURL - the local RTSP stream of the camera for the player: video only (the sound is
-// off in the app, and Media3 can't read the Opus track of go2rtc: "ID Header missing").
+// RTSPURL - the local RTSP stream of the camera for the player: video only (the grid).
 func RTSPURL(name string) string { return xccore.RTSPURL(name) + "?video" }
+
+// RTSPURLAudio - the stream with the sound of the camera: Opus tracks start with the Ogg
+// headers that Media3 needs ("ID Header missing" without them).
+func RTSPURLAudio(name string) string {
+	return xccore.RTSPURL(name) + "?video&audio&opus_headers=1"
+}
+
+// KeyFrame saves one key frame of the camera as a short MP4 to path (the widget picture:
+// the app decodes it with MediaMetadataRetriever; no ffmpeg on Android). It opens the
+// camera session when nobody watches (a few seconds) and closes it after.
+func KeyFrame(name, path string) error {
+	b, code, err := xccore.APICall("GET", "/api/frame.mp4", url.Values{"src": {name}}, nil)
+	if err != nil {
+		return err
+	}
+	if code != 200 || len(b) == 0 {
+		return errors.New(strings.TrimSpace(string(b)))
+	}
+	tmp := path + ".tmp"
+	if err = os.WriteFile(tmp, b, 0o600); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
+}
 
 // Caps returns {"PTZ","Zoom","Light","Siren","Points","History","NightMode"} (cloud
 // request, cached).

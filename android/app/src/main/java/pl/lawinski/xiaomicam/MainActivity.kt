@@ -1,6 +1,7 @@
 package pl.lawinski.xiaomicam
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.WindowManager
@@ -47,6 +48,9 @@ import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    /** a camera asked by a tap on the widget (a new object each time: shown again) */
+    private val open = mutableStateOf<OpenCamera?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -57,19 +61,32 @@ class MainActivity : ComponentActivity() {
             hide(WindowInsetsCompat.Type.systemBars())
         }
         val tv = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
-        setContent { XcTheme { AppRoot(tv) } }
+        if (savedInstanceState == null) onIntent(intent)
+        setContent { XcTheme { AppRoot(tv, open.value) } }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        onIntent(intent)
+    }
+
+    private fun onIntent(intent: Intent?) {
+        intent?.getStringExtra(Widgets.EXTRA_CAMERA)?.let { open.value = OpenCamera(it) }
     }
 }
 
+class OpenCamera(val name: String)
+
 private enum class Screen { LOADING, LIVE, GRID, WELCOME, LOGIN, DEVICES, IP, PICK, MENU }
 
-private const val PREFS = "xiaomi-cam"
+const val PREFS = "xiaomi-cam"
+const val PREF_SOUND = "sound" // the sound of the live view is on
 private const val PREF_CAMERA = "camera"
 private const val PREF_GRID = "grid" // the grid was shown last
 
 @OptIn(ExperimentalComposeUiApi::class) // focusProperties.enter
 @Composable
-private fun AppRoot(tv: Boolean) {
+private fun AppRoot(tv: Boolean, open: OpenCamera?) {
     val s = strings()
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE) }
@@ -105,7 +122,7 @@ private fun AppRoot(tv: Boolean) {
             }
         }
     }
-    LaunchedEffect(Unit) { reload() }
+    LaunchedEffect(open) { reload(open?.name) }
 
     val importer = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult

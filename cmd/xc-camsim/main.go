@@ -4,7 +4,8 @@
 //
 //	xc-camsim [-rtsp :28554] [-http :21984] [-user admin] [-pass secret]
 //
-// RTSP: rtsp://admin:secret@127.0.0.1:28554/main (1920x1080 + audio) and /sub (640x360)
+// RTSP: rtsp://admin:secret@127.0.0.1:28554/main (1920x1080 + AAC audio), /sub (640x360)
+// and /opus (main with Opus audio, like Xiaomi cameras)
 // ONVIF: onvif://admin:secret@127.0.0.1:21984 (profiles main, sub)
 // MJPEG: http://127.0.0.1:21984/api/stream.mjpeg?src=mjpeg
 package main
@@ -48,6 +49,7 @@ streams:
   main: %q
   sub: %q
   mjpeg: "ffmpeg:main#video=mjpeg"
+  opus: "ffmpeg:main#video=copy#audio=opus"
 `, *httpAddr, *rtspAddr, *user, *pass, fmt.Sprintf(source, "1920x1080"), fmt.Sprintf(source, "640x360"))
 	dir, err := os.MkdirTemp("", "xc-camsim")
 	if err != nil {

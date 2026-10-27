@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- UI texts are in Strings.kt (Polish and English) -->
+    <!-- UI texts are in Strings.kt (Polish and English); here only what the system shows -->
     <string name="app_name" translatable="false">Xiaomi Cam</string>
+    <string name="widget_name">Camera picture</string>
+    <string name="widget_description">The last picture of a camera, refreshed every 15–60 min or by hand</string>
 </resources>

@@ -262,7 +262,12 @@ with a debug key: Android asks to confirm the install.
   cameras, also IP cameras), or add an IP camera by its address.
 - **Live view:** quality 2.5K / 720p / SD (2.5K uses the software decoder on phones whose
   hardware H.265 decoder stops at 1080p), pan/tilt (buttons, drag the picture, the remote's
-  arrows), zoom, points 1–3 (keys 1–3), spotlight, night mode.
+  arrows), zoom, points 1–3 (keys 1–3), spotlight, night mode, **sound** of the camera
+  microphone (the speaker button, key M; off by default, remembered).
+- **Home screen widget** "Camera picture": the last picture of a camera, resizable (hold
+  the widget and drag its edges). Pick the camera and the refresh (by hand, every 15 / 30 /
+  60 min) when adding it; ⟳ takes a new picture now, a tap opens the camera in the app. It is
+  a picture, not video: each refresh connects to the camera for a few seconds.
 - **Grid** of all cameras; tap a tile to open it.
 - Layouts: an upright phone (picture on top, controls below), landscape (controls on the
   picture, hidden after 5 s), car radio (picture left, big controls right).
