@@ -162,6 +162,15 @@ language, layout). Relaunch the user's app afterwards. Clean up test files in ~/
 
 ## In progress (update after each step; for the next session)
 
+State 2026-11-03: **unreleased (next v1.34.0)** = Android: "Video for other apps in the background"
+(menu toggle, pref `background_server`, off by default): `Server.kt` = `ServerService` (foreground,
+type specialUse, IMPORTANCE_MIN notification) only keeps the process alive, go2rtc still starts in
+`XcApp`; `ServerReceiver` re-syncs on BOOT_COMPLETED / MY_PACKAGE_REPLACED and on the explicit
+broadcast `pl.lawinski.xiaomicam.action.WAKE_SERVER` from another app (the user's car launcher
+"Kokpit F11", `~/web/radio/launcher`, which plays `rtsp://127.0.0.1:18554/<name>?video` and reads
+`/api/streams`). Tested on xc_car (API 30) with xc-camsim: cold wake by the launcher, service
+survives `am kill`; the API 34 specialUse path is untested on a real device.
+
 State 2026-10-27: **v1.33.0** = Android: camera sound (speaker button / key M, pref `sound`, volume
 only, no reconnect; live URL `RTSPURLAudio` = `?video&audio&opus_headers=1`, the grid stays
 video only; on a parse/decode/audio error the player falls back to video only) and the home

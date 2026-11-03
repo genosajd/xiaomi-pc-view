@@ -5,6 +5,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- the periodic widget refresh survives a reboot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- the cameras for other apps in the background (Server.kt, off by default) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <!-- one APK for phones, car radios and Android TV (NVIDIA Shield) -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
@@ -60,5 +63,26 @@
             android:name=".WidgetJob"
             android:exported="true"
             android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <!-- keeps go2rtc running for another app on the device, e.g. a car launcher -->
+        <service
+            android:name=".ServerService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Local camera stream server (RTSP on 127.0.0.1) for other apps on this device" />
+        </service>
+
+        <!-- boot and the wake from another app (Server.ACTION_WAKE) -->
+        <receiver
+            android:name=".ServerReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="pl.lawinski.xiaomicam.action.WAKE_SERVER" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

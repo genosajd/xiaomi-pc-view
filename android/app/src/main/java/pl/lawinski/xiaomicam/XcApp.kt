@@ -8,6 +8,7 @@ class XcApp : Application() {
         super.onCreate()
         // go2rtc reads its config and opens the local API/RTSP ports: off the main thread
         thread(name = "xccore-start") { Core.start(filesDir.absolutePath) }
+        Server.sync(this)
     }
 
     /** restarts the process (go2rtc reads the config only at start: after an import) */

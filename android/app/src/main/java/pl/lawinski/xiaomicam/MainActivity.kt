@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Videocam
@@ -254,6 +255,8 @@ private fun MenuScreen(
     var removing by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf(camera.name) }
     var error by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    var server by remember { mutableStateOf(Server.enabled(context)) }
 
     FormScreen(camera.name) {
         when {
@@ -294,6 +297,10 @@ private fun MenuScreen(
                 BigButton(s.addCamera, Icons.Rounded.Add, onClick = onAdd)
                 BigButton(s.rename, Icons.Rounded.Edit) { renaming = true }
                 BigButton(s.remove, Icons.Rounded.Delete) { removing = true }
+                BigButton(if (server) s.serverOn else s.serverOff, Icons.Rounded.Cast) {
+                    server = !server
+                    Server.setEnabled(context, server)
+                }
                 BigButton(s.close, null, primary = true, onClick = onClose)
                 Text(s.version.format(BuildConfig.VERSION_NAME), style = MaterialTheme.typography.bodySmall)
             }
