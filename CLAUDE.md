@@ -18,7 +18,7 @@ Workflow per change: commit (message ends with `Co-Authored-By: Claude …` trai
 `vX.Y.Z`, `make install` + `make release`, `git push origin main --tags`, relaunch the app:
 `(setsid nohup ~/.local/bin/xiaomi-cam >/dev/null 2>&1 &)`.
 
-GitHub releases: v1.0.0–v1.33.0 published; from v1.23.0 also the APKs (`make apk`: universal, arm64-v8a, armeabi-v7a) (gh logged in as genosajd). For a new version:
+GitHub releases: v1.0.0–v1.34.0 published; from v1.23.0 also the APKs (`make apk`: universal, arm64-v8a, armeabi-v7a) (gh logged in as genosajd). For a new version:
 `gh release create vX.Y.Z --title "Xiaomi Cam vX.Y.Z" --notes-file <notes> --latest dist/<3 files>`;
 notes must list the changes since the previous tag (English) and the 3 downloads.
 
@@ -162,7 +162,7 @@ language, layout). Relaunch the user's app afterwards. Clean up test files in ~/
 
 ## In progress (update after each step; for the next session)
 
-State 2026-11-03: **unreleased (next v1.34.0)** = Android: "Video for other apps in the background"
+State 2026-11-03: **v1.34.0 released** = Android: "Video for other apps in the background"
 (menu toggle, pref `background_server`, off by default): `Server.kt` = `ServerService` (foreground,
 type specialUse, IMPORTANCE_MIN notification) only keeps the process alive, go2rtc still starts in
 `XcApp`; `ServerReceiver` re-syncs on BOOT_COMPLETED / MY_PACKAGE_REPLACED and on the explicit
