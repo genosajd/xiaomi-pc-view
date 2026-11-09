@@ -84,5 +84,11 @@
                 <action android:name="pl.lawinski.xiaomicam.action.WAKE_SERVER" />
             </intent-filter>
         </receiver>
+
+        <!-- camera control for the car launcher Kokpit F11 (Control.kt checks the calling package) -->
+        <provider
+            android:name=".ControlProvider"
+            android:authorities="pl.lawinski.xiaomicam.control"
+            android:exported="true" />
     </application>
 </manifest>

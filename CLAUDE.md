@@ -162,6 +162,12 @@ language, layout). Relaunch the user's app afterwards. Clean up test files in ~/
 
 ## In progress (update after each step; for the next session)
 
+State 2026-11-09 (not released yet, planned v1.35.0): Android `Control.kt` = exported `ControlProvider`
+(authority `pl.lawinski.xiaomicam.control`), `call()` methods cameras / move (direction, ms 100–4000,
+MotorPress + sleep + MotorRelease) / points / goto (slot) / zoom (value); only `callingPackage`
+`pl.lawinski.radiolauncher` (the Kokpit F11 AI assistant, tool `camera_control`), others get
+SecurityException (checked with `adb shell content call`). Moving the real camera not tested yet.
+
 State 2026-11-03: **v1.34.0 released** = Android: "Video for other apps in the background"
 (menu toggle, pref `background_server`, off by default): `Server.kt` = `ServerService` (foreground,
 type specialUse, IMPORTANCE_MIN notification) only keeps the process alive, go2rtc still starts in
