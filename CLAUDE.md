@@ -18,7 +18,7 @@ Workflow per change: commit (message ends with `Co-Authored-By: Claude …` trai
 `vX.Y.Z`, `make install` + `make release`, `git push origin main --tags`, relaunch the app:
 `(setsid nohup ~/.local/bin/xiaomi-cam >/dev/null 2>&1 &)`.
 
-GitHub releases: v1.0.0–v1.34.0 published; from v1.23.0 also the APKs (`make apk`: universal, arm64-v8a, armeabi-v7a) (gh logged in as genosajd). For a new version:
+GitHub releases: v1.0.0–v1.35.0 published; from v1.23.0 also the APKs (`make apk`: universal, arm64-v8a, armeabi-v7a) (gh logged in as genosajd). For a new version:
 `gh release create vX.Y.Z --title "Xiaomi Cam vX.Y.Z" --notes-file <notes> --latest dist/<3 files>`;
 notes must list the changes since the previous tag (English) and the 3 downloads.
 
@@ -162,7 +162,7 @@ language, layout). Relaunch the user's app afterwards. Clean up test files in ~/
 
 ## In progress (update after each step; for the next session)
 
-State 2026-11-09 (not released yet, planned v1.35.0): Android `Control.kt` = exported `ControlProvider`
+State 2026-11-09: **v1.35.0 released** = Android `Control.kt` = exported `ControlProvider`
 (authority `pl.lawinski.xiaomicam.control`), `call()` methods cameras / move (direction, ms 100–4000,
 MotorPress + sleep + MotorRelease) / points / goto (slot) / zoom (value); only `callingPackage`
 `pl.lawinski.radiolauncher` (the Kokpit F11 AI assistant, tool `camera_control`), others get

@@ -269,6 +269,10 @@ with a debug key: Android asks to confirm the install.
   60 min) when adding it; ⟳ takes a new picture now, a tap opens the camera in the app. It is
   a picture, not video: each refresh connects to the camera for a few seconds.
 - **Grid** of all cameras; tap a tile to open it.
+- **For other apps on the device:** "Video for other apps in the background" keeps the local
+  stream server running (RTSP on 127.0.0.1); the car launcher
+  [Kokpit F11](https://github.com/genosajd/kokpit) shows it live, and its AI assistant can turn
+  the camera (pan/tilt, points 1–3, zoom) through a control entry that answers only Kokpit.
 - Layouts: an upright phone (picture on top, controls below), landscape (controls on the
   picture, hidden after 5 s), car radio (picture left, big controls right).
 - The video stops when the app is in the background (the camera takes one session at a
