@@ -18,7 +18,7 @@ Workflow per change: commit (message ends with `Co-Authored-By: Claude …` trai
 `vX.Y.Z`, `make install` + `make release`, `git push origin main --tags`, relaunch the app:
 `(setsid nohup ~/.local/bin/xiaomi-cam >/dev/null 2>&1 &)`.
 
-GitHub releases: v1.0.0–v1.35.0 published; from v1.23.0 also the APKs (`make apk`: universal, arm64-v8a, armeabi-v7a) (gh logged in as genosajd). For a new version:
+GitHub releases: v1.0.0–v1.36.0 published; from v1.23.0 also the APKs (`make apk`: universal, arm64-v8a, armeabi-v7a) (gh logged in as genosajd). For a new version:
 `gh release create vX.Y.Z --title "Xiaomi Cam vX.Y.Z" --notes-file <notes> --latest dist/<3 files>`;
 notes must list the changes since the previous tag (English) and the 3 downloads.
 
@@ -161,6 +161,26 @@ language, layout). Relaunch the user's app afterwards. Clean up test files in ~/
   dev tool `cmd/xmtool` calls any cloud API with the app's token.
 
 ## In progress (update after each step; for the next session)
+
+State 2026-11-17: **v1.36.0 released** = camera history on the local go2rtc API for Kokpit F11
+(`internal/xccore/history.go`, registered in `xccore.Start`, so desktop and Android; no Kotlin
+change): `GET api/xc/events?src=&day=YYYY-MM-DD` → `{"detection":{on,person,motion,car,fence}|null,
+"events":[{"time":unix,"kind":EventKind}]}` (SDEvents + GetDetection), `GET api/xc/history.mp4?src=
+&time=<unix>` → one key frame as MP4 + header `X-Frame-Time`. `HistoryFrame`: the stream source
+gets `playback=<t>&speed=16&audio=0` (audio=0: near the end of a file the fast playback ended
+before an audio packet and the probe failed "no audio"), a `frameGrab` consumer turns every key
+frame into an MP4 and takes the first whose packet timestamp offset from the first frame >= the
+asked offset in the file (file start from `miss.RecordingsBetween`); the timestamps are recording
+time also at 16× (checked: the OSD clock of the picture = the reported time; key frames every
+~5 s; playback runs on into the next file); then the source is set back (live viewers see a
+break). Refuses the last 90 s. Measured on the real CW700S from the PC: 3–15 s per picture
+(most is finding the file start; the recordings cache is not saved on Android). Tool
+`cmd/xc-histprobe <camera> <day> [<time>…]` (own go2rtc: stop the app first). Checked on the
+xc_car13 emulator with Kokpit 0.3.34 (tool `camera_history`): events, pictures, an IP camera =
+404 "no such Xiaomi camera". The user's camera has detection off, so no real event list was
+seen. Not tested: the car head unit (decoding a 2560x1440 HEVC key frame with
+MediaMetadataRetriever there), two requests at once from different apps. Note: after
+`am force-stop` the app is "stopped" and ignores the WAKE_SERVER broadcast until opened once.
 
 State 2026-11-09: **v1.35.0 released** = Android `Control.kt` = exported `ControlProvider`
 (authority `pl.lawinski.xiaomicam.control`), `call()` methods cameras / move (direction, ms 100–4000,

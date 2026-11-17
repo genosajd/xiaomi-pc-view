@@ -78,6 +78,7 @@ func Start(dir string) error {
 	onvif.Init()
 	tapo.Init()
 	dvrip.Init()
+	initHistoryAPI()
 	LoadIPCameras()
 	return nil
 }

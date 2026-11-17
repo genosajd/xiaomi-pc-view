@@ -273,6 +273,12 @@ with a debug key: Android asks to confirm the install.
   stream server running (RTSP on 127.0.0.1); the car launcher
   [Kokpit F11](https://github.com/genosajd/kokpit) shows it live, and its AI assistant can turn
   the camera (pan/tilt, points 1–3, zoom) through a control entry that answers only Kokpit.
+  The local API (127.0.0.1 only, also in the desktop app) gives the history of a Xiaomi
+  camera: `api/xc/events?src=<camera>&day=YYYY-MM-DD` lists the detections saved on the SD
+  card, `api/xc/history.mp4?src=<camera>&time=<unix>` returns one picture of the recording at
+  that time (header `X-Frame-Time` = its real time). Kokpit's assistant uses it to answer
+  "was a car at the gate at 14:30?". Taking a picture switches the camera to the recording
+  for a few seconds, so live video pauses meanwhile.
 - Layouts: an upright phone (picture on top, controls below), landscape (controls on the
   picture, hidden after 5 s), car radio (picture left, big controls right).
 - The video stops when the app is in the background (the camera takes one session at a
